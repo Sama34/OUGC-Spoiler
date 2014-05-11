@@ -2,34 +2,35 @@
 
 /***************************************************************************
  *
- *   OUGC Spoiler plugin (/inc/plugins/ougc_spoiler.php)
- *	 Author: Omar Gonzalez
- *   Copyright: © 2012-20013 Omar Gonzalez
- *   
- *   Website: http://community.mybb.com/user-25096.html
+ *	OUGC Spoiler plugin (/inc/plugins/ougc_spoiler.php)
+ *	Author: Omar Gonzalez
+ *	Copyright: © 2012-2014 Omar Gonzalez
  *
- *   Hide content within a spoiler tag.
+ *	Website: http://omarg.me
+ *
+ *	Hide content within a spoiler tag.
  *
  ***************************************************************************
- 
+
 ****************************************************************************
 	This program is free software: you can redistribute it and/or modify
 	it under the terms of the GNU General Public License as published by
 	the Free Software Foundation, either version 3 of the License, or
 	(at your option) any later version.
-	
+
 	This program is distributed in the hope that it will be useful,
 	but WITHOUT ANY WARRANTY; without even the implied warranty of
 	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 	GNU General Public License for more details.
-	
+
 	You should have received a copy of the GNU General Public License
 	along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ****************************************************************************/
 
 // Die if IN_MYBB is not defined, for security reasons.
-defined('IN_MYBB') or die('Direct initialization of this file is not allowed.');
+defined('IN_MYBB') or die('This file cannot be accessed directly.');
 
+// Run the ACP hooks.
 if(!defined('IN_ADMINCP'))
 {
 	$plugins->add_hook('parse_message_end', 'ougc_spoiler');
@@ -37,57 +38,51 @@ if(!defined('IN_ADMINCP'))
 
 	global $templatelist;
 
-	if(isset($templatelist))
-	{
-		$templatelist .= ',';
-	}
-	else
+	if(!isset($templatelist))
 	{
 		$templatelist = '';
 	}
+	else
+	{
+		$templatelist .= ',';
+	}
 
-	$templatelist .= 'ougc_spoiler, ougc_spoiler_js';
+	$templatelist .= 'ougcspoiler, ougcspoiler_js';
 }
 
 // Plugin API
 function ougc_spoiler_info()
 {
+	global $lang;
+	ougc_spoiler_lang_load();
+
 	return array(
 		'name'			=> 'OUGC Spoiler',
-		'description'	=> 'Hide content within posts.',
-		'website'		=> 'http://community.mybb.com/user-25096.html',
+		'description'	=> $lang->ougc_spoiler_desc,
+		'website'		=> 'http://mods.mybb.com/view/ougc-spoiler',
 		'author'		=> 'Omar G.',
-		'authorsite'	=> 'http://community.mybb.com/user-25096.html',
+		'authorsite'	=> 'http://omarg.me',
 		'version'		=> '1.0',
+		'versioncode'	=> 1000,
+		'compatibility'	=> '16*',
 		'guid'			=> '',
-		'compatibility' => '16*'
+		'pl'			=> array(
+			'version'	=> 12,
+			'url'		=> 'http://mods.mybb.com/view/pluginlibrary'
+		)
 	);
 }
 
-// _activate
+// _activate() routine
 function ougc_spoiler_activate()
 {
+	global $PL, $cache;
 	ougc_spoiler_deactivate();
-	require_once MYBB_ROOT.'inc/adminfunctions_templates.php';
-	find_replace_templatesets('footer', '#'.preg_quote('<debugstuff>').'#i', '<debugstuff><!--OUGC_SPOILER-->');
-}
 
-// _deactivate
-function ougc_spoiler_deactivate()
-{
-	require_once MYBB_ROOT.'inc/adminfunctions_templates.php';
-	find_replace_templatesets('footer', '#'.preg_quote('<!--OUGC_SPOILER-->').'#i', '', 0);
-}
-
-// Insert JavaScript code into footer
-function ougc_spoiler_js()
-{
-	global $footer, $lang, $templates;
-	ougc_spoiler_lang();
-
-	if(!isset($templates->cache['ougc_spoiler_js']))
-	{
-		$templates->cache['ougc_spoiler_js'] = '<script type="text/javascript">
+	// Add template group
+	$PL->templates('ougcspoiler', '<lang:ougc_spoiler>', array(
+		''	=> '<div class="spoiler tborder"><div class="tfoot"><input type="button" value="{$lang->show}" onclick="showSpoiler(this);" /><strong>{$lang->title}:</strong></div><div style="display: none;" class="spoiler_content">{$content}</div></div>',
+		'js'	=> '<script type="text/javascript">
 <!--
 function showSpoiler(e)
 {
@@ -97,10 +92,88 @@ function showSpoiler(e)
 	el.toggle();
 }
 // -->
-</script>';
+</script>'
+	));
+
+	// Modify templates
+	require_once MYBB_ROOT.'inc/adminfunctions_templates.php';
+	find_replace_templatesets('footer', '#'.preg_quote('<debugstuff>').'#i', '<debugstuff><!--OUGC_SPOILER-->');
+
+	// Insert/update version into cache
+	$plugins = $cache->read('ougc_plugins');
+	if(!$plugins)
+	{
+		$plugins = array();
 	}
 
-	eval('$js = "'.$templates->get('ougc_spoiler_js').'";');
+	$info = ougc_spoiler_info();
+
+	if(!isset($plugins['spoiler']))
+	{
+		$plugins['spoiler'] = $info['versioncode'];
+	}
+
+	/*~*~* RUN UPDATES START *~*~*/
+
+	/*~*~* RUN UPDATES END *~*~*/
+
+	$plugins['spoiler'] = $info['versioncode'];
+	$cache->update('ougc_plugins', $plugins);
+}
+
+// _deactivate() routine
+function ougc_spoiler_deactivate()
+{
+	ougc_spoiler_pl_check();
+
+	// Revert template edits
+	require_once MYBB_ROOT.'inc/adminfunctions_templates.php';
+	find_replace_templatesets('footer', '#'.preg_quote('<!--OUGC_SPOILER-->').'#i', '', 0);
+}
+
+// _is_installed() routine
+function ougc_spoiler_is_installed()
+{
+	global $cache;
+
+	$plugins = (array)$cache->read('ougc_plugins');
+
+	return !empty($plugins['spoiler']);
+}
+
+// _uninstall() routine
+function ougc_spoiler_uninstall()
+{
+	global $PL, $cache;
+	ougc_spoiler_pl_check();
+
+	$PL->templates_delete('ougcspoiler');
+
+	// Delete version from cache
+	$plugins = (array)$cache->read('ougc_plugins');
+
+	if(isset($plugins['spoiler']))
+	{
+		unset($plugins['spoiler']);
+	}
+
+	if(!empty($plugins))
+	{
+		$cache->update('ougc_plugins', $plugins);
+	}
+	else
+	{
+		$PL->cache_delete('ougc_plugins');
+	}
+}
+
+// Insert JavaScript code into footer
+function ougc_spoiler_js()
+{
+	global $templates, $lang, $footer;
+	ougc_spoiler_lang_load();
+
+	eval('$js = "'.$templates->get('ougcspoiler_js').'";');
 	$footer = str_replace('<!--OUGC_SPOILER-->', $js, $footer);
 }
 
@@ -109,17 +182,16 @@ function ougc_spoiler(&$message)
 {
 	global $parser;
 
-	$format = true;
-	if(is_object($parser))
+	if(is_object($parser) && !empty($parser->options))
 	{
 		$format = (isset($parser->options['allow_mycode']) && !empty($parser->options['allow_mycode']));
 	}
 
-	if($format)
+	if(!empty($format))
 	{
 		$spoiler = array(
-			"#\[spoiler\](.+?)\[\/spoiler\](\r\n?|\n?)#si" => ougc_spoiler_format(0),
-			"#\[spoiler=(?:&quot;|\"|')?(.+?)[\"']?(?:&quot;|\"|')?\](.+?)\[\/spoiler\](\r\n?|\n?)#si" => ougc_spoiler_format(1)
+			"#\[spoiler\](.+?)\[\/spoiler\](\r\n?|\n?)#si" => ougc_spoiler_format(),
+			"#\[spoiler=(?:&quot;|\"|')?(.+?)[\"']?(?:&quot;|\"|')?\](.+?)\[\/spoiler\](\r\n?|\n?)#si" => ougc_spoiler_format('custom')
 		);
 
 		do
@@ -130,42 +202,40 @@ function ougc_spoiler(&$message)
 }
 
 // Helper
-function ougc_spoiler_format($case)
+function ougc_spoiler_format($type='default')
 {
 	static $template = array();
-	#_dump($template[$case]);
 
-	if(!isset($template[$case]))
+	if(!isset($spoiler[$type]))
 	{
 		global $templates, $lang;
-		ougc_spoiler_lang();
+		ougc_spoiler_lang_load();
 
-		if(!isset($templates->cache['ougc_spoiler']))
-		{
-			$templates->cache['ougc_spoiler'] = '<div class="spoiler tborder"><div class="tfoot"><input type="button" value="{$lang->show}" onclick="showSpoiler(this);" /><strong>{$lang->title}:</strong></div><div style="display: none;" class="spoiler_content">{$content}</div></div>';
-		}
+		$lang->title = $type ? '$1' : $lang->title;
+		$content = $type ? '$2' : '$1';
 
-		$content = '$1';
-		if($case)
-		{
-			$lang->title = '$1';
-			$content = '$2';
-		}
-
-		eval('$template[$case] = "'.$templates->get('ougc_spoiler').'";');
+		eval('$spoiler[$type] = "'.$templates->get('ougc_spoiler').'";');
 	}
 
-	return $template[$case];
+	return $spoiler[$type];
 }
 
 // Load language file/variables
-function ougc_spoiler_lang()
+function ougc_spoiler_lang_load()
 {
 	global $lang;
 
-	isset($lang->show) or $lang->load('ougc_spoiler', false, true);
+	isset($lang->ougc_spoiler) or $lang->load('ougc_spoiler', false, true);
 
-	isset($lang->show) or $lang->show = 'Show';
-	isset($lang->hide) or $lang->hide = 'Hide';
-	isset($lang->title) or $lang->title = 'Spoiler';
+	if(!isset($lang->ougc_spoiler))
+	{
+		// Plugin API
+		$lang->ougc_spoiler = 'OUGC Spoiler';
+		$lang->ougc_spoiler_desc = 'Hide content within a spoiler tag.';
+
+		// Spoiler MyCode
+		$lang->show = 'Show';
+		$lang->hide = 'Hide';
+		$lang->title = 'Spoiler';
+	}
 }
