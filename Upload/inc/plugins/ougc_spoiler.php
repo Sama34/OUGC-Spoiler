@@ -177,7 +177,7 @@ function ougc_spoiler_uninstall()
 // PluginLibrary dependency check & load
 function ougc_spoiler_pluginlibrary_helper()
 {
-	global $lang, $awards;
+	global $lang;
 	ougc_spoiler_lang_load();
 	$info = ougc_spoiler_info();
 

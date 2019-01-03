@@ -1,4 +1,4 @@
-## OUGC Awards
+## OUGC Spoiler
 Hide content within posts.
 
 ### Support

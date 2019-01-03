@@ -1,6 +1,6 @@
 /***************************************************************************
  *
- *	OUGC Awards plugin (/jscripts/ougc_spoiler.js)
+ *	OUGC Spoiler plugin (/jscripts/ougc_spoiler.js)
  *	Author: Omar Gonzalez
  *	Copyright: © 2012-2019 Omar Gonzalez
  *
