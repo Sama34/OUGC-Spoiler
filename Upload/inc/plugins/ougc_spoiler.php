@@ -4,7 +4,7 @@
  *
  *	OUGC Spoiler plugin (/inc/plugins/ougc_spoiler.php)
  *	Author: Omar Gonzalez
- *	Copyright: © 2012-2014 Omar Gonzalez
+ *	Copyright: © 2012-2019 Omar Gonzalez
  *
  *	Website: http://omarg.me
  *
@@ -50,6 +50,9 @@ if(!defined('IN_ADMINCP'))
 	$templatelist .= 'ougcspoiler, ougcspoiler_js';
 }
 
+// PLUGINLIBRARY
+defined('PLUGINLIBRARY') or define('PLUGINLIBRARY', MYBB_ROOT.'inc/plugins/pluginlibrary.php');
+
 // Plugin API
 function ougc_spoiler_info()
 {
@@ -59,16 +62,16 @@ function ougc_spoiler_info()
 	return array(
 		'name'			=> 'OUGC Spoiler',
 		'description'	=> $lang->ougc_spoiler_desc,
-		'website'		=> 'http://mods.mybb.com/view/ougc-spoiler',
+		'website'		=> 'https://omarg.me/thread?public/plugins/mybb-ougc-spoiler',
 		'author'		=> 'Omar G.',
 		'authorsite'	=> 'http://omarg.me',
-		'version'		=> '1.0',
-		'versioncode'	=> 1000,
-		'compatibility'	=> '16*',
-		'guid'			=> '',
+		'version'		=> '1.8.19',
+		'versioncode'	=> 1819,
+		'compatibility'	=> '18*',
+		'codename'		=> 'ougc_awards',
 		'pl'			=> array(
-			'version'	=> 12,
-			'url'		=> 'http://mods.mybb.com/view/pluginlibrary'
+			'version'	=> 13,
+			'url'		=> 'https://community.mybb.com/mods.php?action=view&pid=573'
 		)
 	);
 }
@@ -77,20 +80,26 @@ function ougc_spoiler_info()
 function ougc_spoiler_activate()
 {
 	global $PL, $cache;
+	ougc_spoiler_pluginlibrary_helper();
 	ougc_spoiler_deactivate();
 
 	// Add template group
-	$PL->templates('ougcspoiler', '<lang:ougc_spoiler>', array(
-		''	=> '<div class="spoiler tborder"><div class="tfoot"><input type="button" value="{$lang->show}" onclick="showSpoiler(this);" /><strong>{$lang->title}:</strong></div><div style="display: none;" class="spoiler_content">{$content}</div></div>',
-		'js'	=> '<script type="text/javascript">
+	$PL->templates('ougcspoiler', 'OUGC Spoiler', array(
+		''	=> '<div class="spoiler tborder">
+	<div class="tcat">
+		<input type="button" value="{$lang->ougc_spoiler_show}" class="button float_right" onclick="return OUGC_Plugins.LoadSpoiler(event); return false;" />
+		<strong>{$lang->ougc_spoiler_title}:</strong>
+	</div>
+	<div style="display: none;" class="spoiler_content">
+		{$content}
+	</div>
+</div>',
+		'js'	=> '<script type="text/javascript" src="{$mybb->asset_url}/jscripts/ougc_spoiler.js"></script>
+<script type="text/javascript">
 <!--
-function showSpoiler(e)
-{
-	var el = $(e).up().next();
-
-	el.visible() ? e.value = \'{$lang->show}\' : e.value = \'{$lang->hide}\';
-	el.toggle();
-}
+	lang.ougc_spoiler_show = "{$lang->ougc_spoiler_show}";
+	lang.ougc_spoiler_hide = "{$lang->ougc_spoiler_hide}";
+	lang.ougc_spoiler_title = "{$lang->ougc_spoiler_title}";
 // -->
 </script>'
 	));
@@ -124,8 +133,6 @@ function showSpoiler(e)
 // _deactivate() routine
 function ougc_spoiler_deactivate()
 {
-	ougc_spoiler_pl_check();
-
 	// Revert template edits
 	require_once MYBB_ROOT.'inc/adminfunctions_templates.php';
 	find_replace_templatesets('footer', '#'.preg_quote('<!--OUGC_SPOILER-->').'#i', '', 0);
@@ -145,7 +152,7 @@ function ougc_spoiler_is_installed()
 function ougc_spoiler_uninstall()
 {
 	global $PL, $cache;
-	ougc_spoiler_pl_check();
+	ougc_spoiler_pluginlibrary_helper();
 
 	$PL->templates_delete('ougcspoiler');
 
@@ -167,13 +174,39 @@ function ougc_spoiler_uninstall()
 	}
 }
 
+// PluginLibrary dependency check & load
+function ougc_spoiler_pluginlibrary_helper()
+{
+	global $lang, $awards;
+	ougc_spoiler_lang_load();
+	$info = ougc_spoiler_info();
+
+	if(!file_exists(PLUGINLIBRARY))
+	{
+		flash_message($lang->sprintf($lang->ougc_spoiler_pluginlibrary_required, $info['pl']['url'], $info['pl']['version']), 'error');
+		admin_redirect('index.php?module=config-plugins');
+		exit;
+	}
+
+	global $PL;
+
+	$PL or require_once PLUGINLIBRARY;
+
+	if($PL->version < $info['pl']['version'])
+	{
+		flash_message($lang->sprintf($lang->ougc_spoiler_pluginlibrary_old, $info['pl']['url'], $info['pl']['version'], $PL->version), 'error');
+		admin_redirect('index.php?module=config-plugins');
+		exit;
+	}
+}
+
 // Insert JavaScript code into footer
 function ougc_spoiler_js()
 {
-	global $templates, $lang, $footer;
+	global $mybb, $templates, $lang, $footer;
 	ougc_spoiler_lang_load();
 
-	eval('$js = "'.$templates->get('ougcspoiler_js').'";');
+	$js = eval($templates->render('ougcspoiler_js'));
 	$footer = str_replace('<!--OUGC_SPOILER-->', $js, $footer);
 }
 
@@ -191,33 +224,38 @@ function ougc_spoiler(&$message)
 	{
 		$spoiler = array(
 			"#\[spoiler\](.+?)\[\/spoiler\](\r\n?|\n?)#si" => ougc_spoiler_format(),
-			"#\[spoiler=(?:&quot;|\"|')?(.+?)[\"']?(?:&quot;|\"|')?\](.+?)\[\/spoiler\](\r\n?|\n?)#si" => ougc_spoiler_format('custom')
+			"#\[spoiler=(?:&quot;|\"|')?(.+?)[\"']?(?:&quot;|\"|')?\](.+?)\[\/spoiler\](\r\n?|\n?)#si" => ougc_spoiler_format(false)
 		);
 
 		do
 		{
 			$message = preg_replace(array_keys($spoiler), array_values($spoiler), $message, -1, $count);
-		} while($count);
+		}
+		while($count);
 	}
 }
 
 // Helper
-function ougc_spoiler_format($type='default')
+function ougc_spoiler_format($simod=true)
 {
-	static $template = array();
+	static $spoiler_tmpls = array();
 
-	if(!isset($spoiler[$type]))
+	if(!isset($spoiler_tmpls[$simod]))
 	{
 		global $templates, $lang;
 		ougc_spoiler_lang_load();
 
-		$lang->title = $type ? '$1' : $lang->title;
-		$content = $type ? '$2' : '$1';
+		$content = '$1';
+		if(!$simod)
+		{
+			$lang->ougc_spoiler_title = '$1';
+			$content = '$2';
+		}
 
-		eval('$spoiler[$type] = "'.$templates->get('ougc_spoiler').'";');
+		$spoiler_tmpls[$simod] = eval($templates->render('ougcspoiler'));
 	}
 
-	return $spoiler[$type];
+	return $spoiler_tmpls[$simod];
 }
 
 // Load language file/variables
@@ -225,17 +263,5 @@ function ougc_spoiler_lang_load()
 {
 	global $lang;
 
-	isset($lang->ougc_spoiler) or $lang->load('ougc_spoiler', false, true);
-
-	if(!isset($lang->ougc_spoiler))
-	{
-		// Plugin API
-		$lang->ougc_spoiler = 'OUGC Spoiler';
-		$lang->ougc_spoiler_desc = 'Hide content within a spoiler tag.';
-
-		// Spoiler MyCode
-		$lang->show = 'Show';
-		$lang->hide = 'Hide';
-		$lang->title = 'Spoiler';
-	}
+	isset($lang->ougc_spoiler) or $lang->load('ougc_spoiler', true);
 }
