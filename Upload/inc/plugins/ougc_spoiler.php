@@ -68,7 +68,7 @@ function ougc_spoiler_info()
 		'version'		=> '1.8.19',
 		'versioncode'	=> 1819,
 		'compatibility'	=> '18*',
-		'codename'		=> 'ougc_awards',
+		'codename'		=> 'ougc_spoiler',
 		'pl'			=> array(
 			'version'	=> 13,
 			'url'		=> 'https://community.mybb.com/mods.php?action=view&pid=573'
