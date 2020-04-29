@@ -1,5 +1,5 @@
 ## OUGC Spoiler
-Hide content within posts.
+Hide content within a spoiler tag.
 
 ### Support
 Please visit [Omar G.](https://omarg.me/thread?public/plugins/mybb-ougc-spoiler "Visit Omar.G") for more information about this project.
