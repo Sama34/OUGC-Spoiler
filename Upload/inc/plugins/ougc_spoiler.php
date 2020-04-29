@@ -4,9 +4,9 @@
  *
  *	OUGC Spoiler plugin (/inc/plugins/ougc_spoiler.php)
  *	Author: Omar Gonzalez
- *	Copyright: © 2012-2019 Omar Gonzalez
+ *	Copyright: © 2012-2020 Omar Gonzalez
  *
- *	Website: http://omarg.me
+ *	Website: https://ougc.network/
  *
  *	Hide content within a spoiler tag.
  *
@@ -62,11 +62,11 @@ function ougc_spoiler_info()
 	return array(
 		'name'			=> 'OUGC Spoiler',
 		'description'	=> $lang->ougc_spoiler_desc,
-		'website'		=> 'https://omarg.me/thread?public/plugins/mybb-ougc-spoiler',
+		'website'		=> 'https://ougc.network',
 		'author'		=> 'Omar G.',
-		'authorsite'	=> 'http://omarg.me',
-		'version'		=> '1.8.19',
-		'versioncode'	=> 1819,
+		'authorsite'	=> 'https://ougc.network',
+		'version'		=> '1.8.20',
+		'versioncode'	=> 1820,
 		'compatibility'	=> '18*',
 		'codename'		=> 'ougc_spoiler',
 		'pl'			=> array(

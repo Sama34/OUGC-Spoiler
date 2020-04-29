@@ -1,15 +1,17 @@
+<?php
+
 /***************************************************************************
  *
- *	OUGC Spoiler plugin (/jscripts/ougc_spoiler.js)
+ *	OUGC Spoiler plugin (/inc/anguages/english/ougc_spoiler.lang.php)
  *	Author: Omar Gonzalez
- *	Copyright: © 2012-2019 Omar Gonzalez
+ *	Copyright: © 2012-2020 Omar Gonzalez
  *
  *	Website: https://ougc.network/
  *
  *	Hide content within a spoiler tag.
  *
  ***************************************************************************
- 
+
 ****************************************************************************
 	This program is free software: you can redistribute it and/or modify
 	it under the terms of the GNU General Public License as published by
@@ -25,16 +27,15 @@
 	along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ****************************************************************************/
 
-var OUGC_Plugins = OUGC_Plugins || {};
+// Plugin API
+$l['ougc_spoiler'] = 'OUGC Spoiler';
+$l['ougc_spoiler_desc'] = 'Oculta contenido dentro de una etiqueta de spoiler.';
 
-$.extend(true, OUGC_Plugins, {
-	LoadSpoiler: function(e)
-	{
-		e = e || window.event;
+// Spoiler MyCode
+$l['ougc_spoiler_show'] = 'Mostrar';
+$l['ougc_spoiler_hide'] = 'Ocultar';
+$l['ougc_spoiler_title'] = 'Spoiler';
 
-		var target = e.target || e.srcElement;
-
-		$(target).val() == lang.ougc_spoiler_show ? $(target).val(lang.ougc_spoiler_hide) : $(target).val(lang.ougc_spoiler_show);
-		$(target).parent('div').parent('div.spoiler').children('div.spoiler_content').toggle();
-	}
-});
+// PluginLibrary
+$l['ougc_spoiler_pluginlibrary_required'] = 'Este plugin requiere <a href="{1}">PluginLibrary</a> version {2} para funcionar.';
+$l['ougc_spoiler_pluginlibrary_old'] = $l['ougc_spoiler_pluginlibrary_required'];
