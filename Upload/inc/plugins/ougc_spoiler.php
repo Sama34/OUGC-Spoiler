@@ -33,7 +33,7 @@ defined('IN_MYBB') or die('This file cannot be accessed directly.');
 // Run the ACP hooks.
 if(!defined('IN_ADMINCP'))
 {
-	$plugins->add_hook('parse_message_end', 'ougc_spoiler');
+	$plugins->add_hook('parse_message', 'ougc_spoiler');
 	$plugins->add_hook('global_end', 'ougc_spoiler_js');
 
 	global $templatelist;
@@ -57,6 +57,7 @@ defined('PLUGINLIBRARY') or define('PLUGINLIBRARY', MYBB_ROOT.'inc/plugins/plugi
 function ougc_spoiler_info()
 {
 	global $lang;
+
 	ougc_spoiler_lang_load();
 
 	return array(
@@ -65,8 +66,8 @@ function ougc_spoiler_info()
 		'website'		=> 'https://ougc.network',
 		'author'		=> 'Omar G.',
 		'authorsite'	=> 'https://ougc.network',
-		'version'		=> '1.8.20',
-		'versioncode'	=> 1820,
+		'version'		=> '1.8.21',
+		'versioncode'	=> 1821,
 		'compatibility'	=> '18*',
 		'codename'		=> 'ougc_spoiler',
 		'pl'			=> array(
@@ -80,7 +81,9 @@ function ougc_spoiler_info()
 function ougc_spoiler_activate()
 {
 	global $PL, $cache;
+
 	ougc_spoiler_pluginlibrary_helper();
+
 	ougc_spoiler_deactivate();
 
 	// Add template group
@@ -106,10 +109,12 @@ function ougc_spoiler_activate()
 
 	// Modify templates
 	require_once MYBB_ROOT.'inc/adminfunctions_templates.php';
+
 	find_replace_templatesets('footer', '#'.preg_quote('<debugstuff>').'#i', '<debugstuff><!--OUGC_SPOILER-->');
 
 	// Insert/update version into cache
 	$plugins = $cache->read('ougc_plugins');
+
 	if(!$plugins)
 	{
 		$plugins = array();
@@ -127,6 +132,7 @@ function ougc_spoiler_activate()
 	/*~*~* RUN UPDATES END *~*~*/
 
 	$plugins['spoiler'] = $info['versioncode'];
+
 	$cache->update('ougc_plugins', $plugins);
 }
 
@@ -135,6 +141,7 @@ function ougc_spoiler_deactivate()
 {
 	// Revert template edits
 	require_once MYBB_ROOT.'inc/adminfunctions_templates.php';
+
 	find_replace_templatesets('footer', '#'.preg_quote('<!--OUGC_SPOILER-->').'#i', '', 0);
 }
 
@@ -152,6 +159,7 @@ function ougc_spoiler_is_installed()
 function ougc_spoiler_uninstall()
 {
 	global $PL, $cache;
+
 	ougc_spoiler_pluginlibrary_helper();
 
 	$PL->templates_delete('ougcspoiler');
@@ -178,14 +186,16 @@ function ougc_spoiler_uninstall()
 function ougc_spoiler_pluginlibrary_helper()
 {
 	global $lang;
+
 	ougc_spoiler_lang_load();
+
 	$info = ougc_spoiler_info();
 
 	if(!file_exists(PLUGINLIBRARY))
 	{
 		flash_message($lang->sprintf($lang->ougc_spoiler_pluginlibrary_required, $info['pl']['url'], $info['pl']['version']), 'error');
+	
 		admin_redirect('index.php?module=config-plugins');
-		exit;
 	}
 
 	global $PL;
@@ -195,8 +205,8 @@ function ougc_spoiler_pluginlibrary_helper()
 	if($PL->version < $info['pl']['version'])
 	{
 		flash_message($lang->sprintf($lang->ougc_spoiler_pluginlibrary_old, $info['pl']['url'], $info['pl']['version'], $PL->version), 'error');
+
 		admin_redirect('index.php?module=config-plugins');
-		exit;
 	}
 }
 
@@ -204,9 +214,11 @@ function ougc_spoiler_pluginlibrary_helper()
 function ougc_spoiler_js()
 {
 	global $mybb, $templates, $lang, $footer;
+
 	ougc_spoiler_lang_load();
 
 	$js = eval($templates->render('ougcspoiler_js'));
+
 	$footer = str_replace('<!--OUGC_SPOILER-->', $js, $footer);
 }
 
@@ -231,6 +243,7 @@ function ougc_spoiler(&$message)
 		{
 			$message = preg_replace(array_keys($spoiler), array_values($spoiler), $message, -1, $count);
 		}
+
 		while($count);
 	}
 }
@@ -243,16 +256,20 @@ function ougc_spoiler_format($simod=true)
 	if(!isset($spoiler_tmpls[$simod]))
 	{
 		global $templates, $lang;
+
 		ougc_spoiler_lang_load();
 
 		$content = '$1';
+
 		if(!$simod)
 		{
 			$lang->ougc_spoiler_title = '$1';
+
 			$content = '$2';
 		}
 
-		$spoiler_tmpls[$simod] = eval($templates->render('ougcspoiler'));
+		// template line breaks are always an issue within this hook
+		$spoiler_tmpls[$simod] = eval(preg_replace("/\r|\n/", '', $templates->render('ougcspoiler', true, false)));
 	}
 
 	return $spoiler_tmpls[$simod];
