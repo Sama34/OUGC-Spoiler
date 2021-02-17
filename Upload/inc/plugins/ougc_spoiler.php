@@ -269,7 +269,7 @@ function ougc_spoiler_format($simod=true)
 		}
 
 		// template line breaks are always an issue within this hook
-		$spoiler_tmpls[$simod] = eval(preg_replace("/\r|\n/", '', $templates->render('ougcspoiler', true, false)));
+		$spoiler_tmpls[$simod] = eval(str_replace(["\r", "\n"], '', $templates->render('ougcspoiler', true, false)));
 	}
 
 	return $spoiler_tmpls[$simod];
