@@ -1,8 +1,10 @@
 ## OUGC Spoiler
 Hide content within a spoiler tag.
 
+***
+
 ### Support
-Please visit [Omar G.](https://omarg.me/thread?public/plugins/mybb-ougc-spoiler "Visit Omar.G") for more information about this project.
+Please visit [OUGC Network](https://ougc.network/ "Visit OUGC Network") for more information about this project.
 
 ### Thank You!
 Remember this is a free release developed on free time, either for personal use or as custom requests.
